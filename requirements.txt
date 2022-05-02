@@ -1,0 +1,13 @@
+#pip install -r requirements.txt
+pandas==1.3.4
+numpy
+datetime
+pyarrow
+xlsxwriter
+seaborn
+matplotlib
+PyWavelets
+scikit-learn
+scikit-plot
+skfeature-chappers
+mlxtend
