@@ -284,7 +284,8 @@ class Subject:
         # Get a list of all the columns that contain any of the desired features in their name
         # (recall that columns are currently of the form channel_1_variance, so the feature name 
         # is cotained in the column name):
-        features_names = [column for column in self.complete_dataframe.columns if any((feature == column.split('_', maxsplit=2)[2])    # Either the input feature is cointained in the column name
+    
+        features_names = [column for column in self.complete_dataframe.drop('target', axis=1).columns if any((feature == column.split('_', maxsplit=2)[2])    # Either the input feature is cointained in the column name
                         or (feature == column) for feature in features)]    # or it is exactly the column name
         column_names= features_names + ['target']    # Include the target column into extacted columns again
         
@@ -558,47 +559,38 @@ class ML_Model:
         self.dataframe.to_excel(writer)
         writer.save()
 
-    def store_best_hyperparameter_selection(self, featuresets_dict:dict, param_grid, window_size: int, overlap: int, featuresets_file_name: str, pca= False, scale= True):
+    def store_best_hyperparameter_selection(self, featuresets_dict:dict, param_grid, scale= True):
         """
         Performs grid search to find the best possible hyperparameters, 
         and stores results in an excel.
-        TODO: fix, remove window,etc, compact lists
         """
 
         self.featuresets_names = featuresets_dict.keys() #List of features names
         self.featuresets_dict = featuresets_dict
+
         scores = [] #List of misclassification scores
         hyperparameters = [] #List of dictionaries
         
         for feature_set in featuresets_dict.values():
-            #print('Preparing data for feature set {}'.format(feature_set))
             #Prepare data with specific features
             self.subject.convert_data_format(feature_set)
 
-            X_train, X_test, y_train, y_test = train_test_split(
-                    self.subject.data, self.subject.target, random_state=0)    
+            X_train, X_test, y_train, y_test = train_test_split(    # Grid search should be done only for the training set
+                    self.subject.data, self.subject.target,  train_size=0.666666666, shuffle=False)       
 
             if self.type == 'svc':
-                #cv=[(slice(None), slice(None))] for no cross-validation
-                grid_search = GridSearchCV(SVC(), param_grid, scoring='accuracy', cv=2)          
+                grid_search = GridSearchCV(SVC(), param_grid, scoring='accuracy', cv=3)    # Use cv=[(slice(None), slice(None))] for no cross-validation          
             elif self.type == 'lda':
                 grid_search = GridSearchCV(LinearDiscriminantAnalysis(), param_grid, scoring='accuracy', cv=2)
             elif self.type == 'random_forest':
                 grid_search = GridSearchCV(RandomForestClassifier(), param_grid, scoring='accuracy', cv=2)
             
-            if scale == True:
-                # scale the data using MinMaxScaler
+            if scale == True:    # Scale the data using MinMaxScaler
                 scaler = MinMaxScaler()
                 scaler.fit(X_train)
                 X_train = scaler.transform(X_train)
                 X_test = scaler.transform(X_test)
                 self.scale = 'scale'
-
-            if pca== True:
-                pca = PCA(n_components=5, whiten=True, random_state=0).fit(X_train)
-                X_train = pca.transform(X_train)
-                X_test = pca.transform(X_test)
-                self.pca = 'pca'
 
             grid_search.fit(X_train, y_train)
 
@@ -617,9 +609,16 @@ class ML_Model:
         #Create dataframe with results and store it in excel file.
         self.hyperparameter_dataframe = pd.DataFrame(data= {'Scores': scores, 'Hyperparameters': hyperparameters}, index= self.featuresets_names)
             
-        path_name = 'Code/Results/' + str(window_size) + '_' + str(overlap) + '_window/'
-        os.makedirs(os.path.dirname(path_name), exist_ok=True)
-        writer = pd.ExcelWriter(path_name + self.type + '_best_hyperparameters' + featuresets_file_name + self.pca + self.scale + '_results.xlsx')
+        path_name = ''.join(['Code/Results/', str(self.subject.dataset.window_size), '_', str(self.subject.dataset.overlap), '_window/', 
+                            str(self.subject.dataset.wavelet_level), '_', self.subject.dataset.wavelet_type, '/'])
+        # format example: Code/Results/200_100_window/2_db1/
+
+        file_name = ''.join([self.type, '_best_hyperparameters', str(self.featuresets_names), self.scale, '_results.xlsx'])
+        # Example: svc_best_hyperparameters_featuresets_file_name_scale_results.elx
+
+        os.makedirs(os.path.dirname(path_name), exist_ok=True)    # Create directory if not there
+        
+        writer = pd.ExcelWriter(path_name + file_name)    # Save dataframe to excel
         self.hyperparameter_dataframe.to_excel(writer)
         writer.save()
     
@@ -692,8 +691,12 @@ class ML_Model:
 
     def plot_PCA_improvement(self, no_features, feature_set_name, n_components):
         """
-        TODO: fill
+        Plots the scores and CPU time of using PCA before fitting a desired model using as features
+        the features that were selected by LDA forward feature selection. This is a plot analogous to 
+        that generated during forward feature selection: no. of selected features as x-axis, and performance
+        as y-axis.  
         """
+
         full_path = ''.join(['Code/Results/', str(self.subject.dataset.window_size), '_', str(self.subject.dataset.overlap), '_window/', 
                             str(self.subject.dataset.wavelet_level), '_', self.subject.dataset.wavelet_type, '/'])  
         # Example: Code/Results/200_100_window/2_db1/
@@ -789,7 +792,11 @@ class ML_Model:
         plt.clf()
 
     def plot_forward_selection_true_results(self, no_features, feature_set_name):
-        """TODO: fill and comment
+        """
+        Plots the scores and CPU time on the training set of a desired model using as features
+        the features that were selected by LDA forward feature selection. This is a plot analogous to 
+        that generated during forward feature selection: no. of selected features as x-axis, and performance
+        as y-axis (in this case validating set accuracy and CPU time of fitting the model).  
         """
         
         full_path = ''.join(['Code/Results/', str(self.subject.dataset.window_size), '_', str(self.subject.dataset.overlap), '_window/', 
@@ -1149,7 +1156,7 @@ class ML_Model:
         
         return features_list, score, results_dict    # Return best feature set and best score
 
-    def backward_feature_selection(self, no_features: int, feature_set_name: str):
+    def backward_feature_elimination(self, no_features: int, feature_set_name: str):
         """
         Performs backward elimination.
 
@@ -1209,7 +1216,7 @@ class ML_Model:
 
     def store_forward_selection_results(self):
         """
-        TODO: fill
+        Creates a dataframe from forward feature selection function and stores results in excel file.
         """
 
         forward_dataframe = pd.DataFrame({'no_features': list(self.forward_selection),    # Make dictionary with all the results from feature selection plots
@@ -1233,7 +1240,7 @@ class ML_Model:
 
     def store_backward_elimination_results(self):
         """
-        TODO: fill
+        Creates a dataframe from backward feature elimination function and stores results in excel file.
         """
 
         backward_dataframe = pd.DataFrame({'no_features': list(self.backward_elimination),    # Make dictionary with all the results from feature selection plots
@@ -1267,9 +1274,3 @@ def classification_scores(y_test,y_pred):
     top_k_accuracy = metrics.top_k_accuracy_score(y_test,y_pred)
     average_precision = metrics.average_precision_score(y_test,y_pred)
     neg_brier_score = metrics.brier_score_loss(y_test,y_pred)
-
-def manual_lda():
-    """
-    TODO: fill
-    """
-    print('hello')

@@ -33,7 +33,7 @@ window_overlap = 150
 wavelet_type = 'db1'
 wavelet_level = 4
 
-model_name = 'lda'    # Choose: svc, lda, random_forest
+model_name = 'svc'    # Choose: svc, lda, random_forest
 
 
 # Create dataset class and save only if necessary 
@@ -67,28 +67,27 @@ mlmodel = model.ML_Model(subject= subject, model_name= model_name, hyperparamete
 # Create and store results table for some list of feature sets (which is taken from the list_features file)
 # ----------------------------------------------
 mlmodel.create_featuresets_dataframe(featuresets_dict=feat.feature_sets_dict, scale=True, pca=False, n_components=0.95, plots=True, cross_validation=False)   
-mlmodel.store_results_dataframe()    # Store these results
+# mlmodel.store_results_dataframe()    # Store these results
 
 
 # Plot functions
 # ----------------------------------------------
-#mlmodel.plot_pca(featuresets_dict=feat.feature_sets_dict)    # Plot PCA plots for desired feature sets, this is independent of other processes
-#mlmodel.feature_selection_plots()    # Use only for individual channels, otherwise too slow and plots have too much information
+# mlmodel.plot_pca(featuresets_dict=feat.feature_sets_dict)    # Plot PCA plots for desired feature sets, this is independent of other processes
+# mlmodel.feature_selection_plots()    # Use only for individual channels, otherwise too slow and plots have too much information
 
 
 # Wrapper feature selection
 # ----------------------------------------------
-mlmodel.forward_feature_selection(35, 'all_features')[0]
-mlmodel.store_forward_selection_results()
+# mlmodel.forward_feature_selection(35, 'all_features')[0]
+# mlmodel.store_forward_selection_results()
 
-mlmodel.backward_feature_selection(256, 'all_features')[0]    # This is quite computationally expensive
-#TODO add similar function
-
+# mlmodel.backward_feature_elimination(256, 'all_features')[0]    # This is quite computationally expensive
+# mlmodel.store_backward_elimination_results()
 
 # Use feature sets from forward selection to get other results
 # ----------------------------------------------
-mlmodel.plot_forward_selection_true_results(no_features=35, feature_set_name = 'all features')
-#mlmodel.plot_PCA_improvement(no_features=35, feature_set_name = 'all features')
+# mlmodel.plot_forward_selection_true_results(no_features=35, feature_set_name = 'all features')
+# mlmodel.plot_PCA_improvement(no_features=35, feature_set_name = 'all features')
 
 
 # Set hyperparameters for grid search table
@@ -106,5 +105,4 @@ elif model_name == 'random_forest':
 
 # Create and store grid search table (computationally expensive for some models such as svm)
 # ----------------------------------------------
-# mlmodel.store_best_hyperparameter_selection(feature_sets_dict=feature_sets_dict, param_grid=param_grid, window_size=200, overlap=100, 
-#                                             featuresets_file_name='including_best', scale=True)
+mlmodel.store_best_hyperparameter_selection(featuresets_dict=feat.feature_sets_dict, param_grid=param_grid, scale=True)
