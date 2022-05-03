@@ -456,7 +456,7 @@ class ML_Model:
             X_test = scaler.transform(X_test)
             self.scale = 'scale'    # Change scale attribute to reflect that data is scaled when storing files
 
-        if pca == True:    # Apply PCA
+        if pca:    # Apply PCA
             fit_time_start = process_time()    # Start counting PCA + fitting time
             pca_reduction = PCA(n_components=n_components, random_state=0)
             pca_reduction.fit(X_train)
@@ -469,7 +469,7 @@ class ML_Model:
             fit_time_end = process_time()    # End counting CPU time
             y_pred = self.model.predict(X_test)    # Get predicted values
             
-            if plots== True:
+            if plots:
                 #Create and store confusion matrix
                 self.confusion_matrix(y_test, y_pred, feature_set)
                 
@@ -484,14 +484,14 @@ class ML_Model:
             fit_time_end = process_time()    # Stop counting time
             y_pred = self.model.predict(X_test)    # Predict all test points
 
-            if plots== True:
+            if plots:
                 self.confusion_matrix(y_test, y_pred, feature_set)    # Create and store confusion matrix
                 
             # Get scores 
             training_score = round(self.model.score(X_train, y_train), 4)
             test_score = round(self.model.score(X_test, y_test), 4)
 
-            if cross_validation == True:    
+            if cross_validation:    
                 # In this case a cross validation score is added to the dictionary of scores. Now, there are several 
                 # problems with this that I didn't have time to account for. First, for SVC and other models the data 
                 # must be scaled. However, the scaler depends on the trainig data, which means that scaling must be 
@@ -585,7 +585,7 @@ class ML_Model:
             elif self.type == 'random_forest':
                 grid_search = GridSearchCV(RandomForestClassifier(), param_grid, scoring='accuracy', cv=2)
             
-            if scale == True:    # Scale the data using MinMaxScaler
+            if scale:    # Scale the data using MinMaxScaler
                 scaler = MinMaxScaler()
                 scaler.fit(X_train)
                 X_train = scaler.transform(X_train)
