@@ -16,8 +16,8 @@ class LDA():
 
         mean_vectors = []
  
-        for class in target_classes:
-            mean_vectors.append(np.mean(X[y == class], axis=0))    # Calculate the mean of each class and store it in mean_vectors  
+        for clss in target_classes:
+            mean_vectors.append(np.mean(X[y == clss], axis=0))    # Calculate the mean of each class and store it in mean_vectors  
 
         # Get between class scatter matrix
         data_mean = np.mean(X, axis=0).reshape(1, X.shape[1])
@@ -32,9 +32,9 @@ class LDA():
         scatter_matrix = []    # List of scatter matrices for all classes
  
         # Calculate and add all scatter matrices
-        for class, mean in enumerate(mean_vectors):
+        for clss, mean in enumerate(mean_vectors):
             Si = np.zeros((X.shape[1], X.shape[1]))
-            for row in X[y == class]:
+            for row in X[y == clss]:
                 t = (row - mean).reshape(1, X.shape[1])
                 Si += np.dot(t.T, t)
             scatter_matrix.append(Si)
