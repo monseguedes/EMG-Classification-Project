@@ -33,7 +33,7 @@ window_overlap = 150
 wavelet_type = 'db1'
 wavelet_level = 4
 
-model_name = 'svc'    # Choose: svc, lda, random_forest
+model_name = 'lda'    # Choose: svc, lda, random_forest
 
 
 # Create dataset class and save only if necessary 
@@ -78,8 +78,8 @@ mlmodel.create_featuresets_dataframe(featuresets_dict=feat.feature_sets_dict, sc
 
 # Wrapper feature selection
 # ----------------------------------------------
-# mlmodel.forward_feature_selection(35, 'all_features')[0]
-# mlmodel.store_forward_selection_results()
+mlmodel.forward_feature_selection(35, 'all_features')[0]
+mlmodel.store_forward_selection_results()
 
 # mlmodel.backward_feature_elimination(256, 'all_features')[0]    # This is quite computationally expensive
 # mlmodel.store_backward_elimination_results()
@@ -87,7 +87,7 @@ mlmodel.create_featuresets_dataframe(featuresets_dict=feat.feature_sets_dict, sc
 # Use feature sets from forward selection to get other results
 # ----------------------------------------------
 # mlmodel.plot_forward_selection_true_results(no_features=35, feature_set_name = 'all features')
-# mlmodel.plot_PCA_improvement(no_features=35, feature_set_name = 'all features')
+mlmodel.plot_PCA_improvement(no_features=35, n_components=0.95, feature_set_name = 'all features')
 
 
 # Set hyperparameters for grid search table
